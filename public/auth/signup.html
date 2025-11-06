@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - HEIME</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .auth-container {
+            min-height: calc(100vh - 70px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+        }
+
+        .auth-card {
+            background: var(--pure-white);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 50px;
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .auth-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--dark-black);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .auth-subtitle {
+            color: var(--text-gray);
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--dark-black);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-orange);
+            box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 16px;
+            background-color: var(--primary-orange);
+            color: var(--pure-white);
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .auth-btn:hover {
+            background-color: #ff7a1f;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 102, 0, 0.3);
+        }
+
+        .auth-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .step.active {
+            background-color: var(--primary-orange);
+            color: var(--pure-white);
+        }
+
+        .step.inactive {
+            background-color: #e0e0e0;
+            color: var(--text-gray);
+        }
+
+        .step.completed {
+            background-color: #4caf50;
+            color: var(--pure-white);
+        }
+
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .success-message {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .otp-input-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .otp-input {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+        }
+
+        .otp-input:focus {
+            border-color: var(--primary-orange);
+            outline: none;
+        }
+
+        .resend-otp {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .resend-otp a {
+            color: var(--primary-orange);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .resend-otp a:hover {
+            text-decoration: underline;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 30px;
+            color: var(--text-gray);
+        }
+
+        .login-link a {
+            color: var(--primary-orange);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        #step1, #step2, #step3 {
+            display: none;
+        }
+
+        #step1.active, #step2.active, #step3.active {
+            display: block;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .auth-container {
+                padding: 40px 15px;
+            }
+
+            .auth-card {
+                padding: 40px 30px;
+            }
+
+            .auth-title {
+                font-size: 28px;
+            }
+
+            .auth-subtitle {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .auth-container {
+                padding: 30px 15px;
+            }
+
+            .auth-card {
+                padding: 30px 20px;
+                border-radius: 15px;
+            }
+
+            .auth-title {
+                font-size: 24px;
+            }
+
+            .auth-subtitle {
+                font-size: 14px;
+                margin-bottom: 30px;
+            }
+
+            .form-input {
+                padding: 16px 14px; /* Prevents zoom on iOS */
+                font-size: 16px;
+            }
+
+            .auth-btn {
+                padding: 16px;
+                font-size: 16px;
+                min-height: 50px; /* Touch-friendly */
+            }
+
+            .otp-input {
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+            }
+
+            .step {
+                width: 35px;
+                height: 35px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <a href="../index.html" class="logo">
+                    <img src="../../images/logo.png" alt="HEIME Logo" class="logo-img">
+                    <span>HEIME</span>
+                </a>
+                
+                <!-- Hamburger Menu Icon -->
+                <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                
+                <!-- Navigation Links -->
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="../index.html" class="nav-link">Home</a></li>
+                    <li><a href="../about/about.html" class="nav-link">About</a></li>
+                    <li><a href="../shop/shop.html" class="nav-link">Shop</a></li>
+                    <li><a href="../contact/contact.html" class="nav-link">Contact</a></li>
+                    <li><a href="signup.html" class="nav-link signup-btn">Sign Up</a></li>
+                    <li><a href="login.html" class="nav-link login-btn">Login</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Signup Form -->
+    <section class="auth-container">
+        <div class="auth-card">
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Join HEIME and start shopping premium hoodies</p>
+
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step active" id="step1-indicator">1</div>
+                <div class="step inactive" id="step2-indicator">2</div>
+                <div class="step inactive" id="step3-indicator">3</div>
+            </div>
+
+            <!-- Error/Success Messages -->
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+
+            <!-- Step 1: Email and Username -->
+            <div id="step1" class="active">
+                <form id="emailForm">
+                    <div class="form-group">
+                        <label class="form-label" for="username">Username</label>
+                        <input type="text" id="username" class="form-input" placeholder="Choose a username" required minlength="3" maxlength="20">
+                        <small style="color: var(--text-gray); font-size: 12px; margin-top: 5px; display: block;">3-20 characters, letters and numbers only</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="email">Email Address</label>
+                        <input type="email" id="email" class="form-input" placeholder="your.email@example.com" required>
+                    </div>
+                    <button type="submit" class="auth-btn">Send OTP</button>
+                </form>
+            </div>
+
+            <!-- Step 2: OTP Verification -->
+            <div id="step2">
+                <p style="text-align: center; margin-bottom: 20px; color: var(--text-gray);">
+                    We've sent a 6-digit OTP to your email. Please enter it below.
+                </p>
+                <form id="otpForm">
+                    <div class="otp-input-group">
+                        <input type="text" class="otp-input" maxlength="1" id="otp1" required>
+                        <input type="text" class="otp-input" maxlength="1" id="otp2" required>
+                        <input type="text" class="otp-input" maxlength="1" id="otp3" required>
+                        <input type="text" class="otp-input" maxlength="1" id="otp4" required>
+                        <input type="text" class="otp-input" maxlength="1" id="otp5" required>
+                        <input type="text" class="otp-input" maxlength="1" id="otp6" required>
+                    </div>
+                    <button type="submit" class="auth-btn">Verify OTP</button>
+                    <div class="resend-otp">
+                        <a href="#" id="resendOtp">Resend OTP</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 3: Create Password -->
+            <div id="step3">
+                <form id="passwordForm">
+                    <div class="form-group">
+                        <label class="form-label" for="password">Create Password</label>
+                        <input type="password" id="password" class="form-input" placeholder="Enter your password" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" class="form-input" placeholder="Confirm your password" required minlength="6">
+                    </div>
+                    <button type="submit" class="auth-btn">Create Account</button>
+                </form>
+            </div>
+
+            <div class="login-link">
+                Already have an account? <a href="login.html">Login here</a>
+            </div>
+        </div>
+    </section>
+
+    <script src="signup.js"></script>
+    <script src="../script.js"></script>
+</body>
+</html>
+
