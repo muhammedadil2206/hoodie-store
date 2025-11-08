@@ -6,7 +6,9 @@ const cors = require('cors');
 const path = require('path');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
-const fs = require('fs').promises;
+const crypto = require('crypto');
+const mongoose = require('mongoose');
+const Contact = require('./model/contact');
 
 const app = express();
 
@@ -33,9 +35,15 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
+// Root route fallback for static hosting providers
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 const PORT = process.env.PORT || 3000;
+const MONGO_URI = process.env.MONGODB_URI || 'mongodb+srv://aithorappan_db_user:<db_password>@cluster0.rl7qkny.mongodb.net/?appName=Cluster0';
 
 // Check if email credentials are set
 if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
@@ -50,15 +58,84 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+// MongoDB Schemas & Models
+const userSchema = new mongoose.Schema({
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    username: { type: String, required: true, trim: true },
+    usernameLower: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now }
+});
+
+userSchema.pre('validate', function (next) {
+    if (this.username) {
+        this.usernameLower = this.username.toLowerCase();
+    }
+    next();
+});
+
+const otpSchema = new mongoose.Schema({
+    email: { type: String, required: true, lowercase: true, trim: true, index: true },
+    otp: { type: String, required: true },
+    token: { type: String, required: true },
+    expiresAt: { type: Date, required: true },
+    username: { type: String },
+    usernameLower: { type: String },
+    verified: { type: Boolean, default: false }
+}, { timestamps: true });
+
+otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+const orderSchema = new mongoose.Schema({
+    orderNumber: { type: String, required: true, unique: true },
+    fullName: { type: String, required: true },
+    email: { type: String, required: true, lowercase: true, trim: true },
+    phone: { type: String, required: true },
+    address: { type: String, required: true },
+    city: { type: String, required: true },
+    postalCode: { type: String },
+    paymentMethod: { type: String, required: true },
+    paymentMethodDisplay: { type: String, required: true },
+    subtotal: { type: String, required: true },
+    total: { type: String, required: true },
+    orderItems: [{
+        name: String,
+        price: String,
+        quantity: Number,
+        totalPrice: String
+    }],
+    createdAt: { type: Date, default: Date.now }
+});
+
+const User = mongoose.model('User', userSchema);
+const Otp = mongoose.model('Otp', otpSchema);
+const Order = mongoose.model('Order', orderSchema);
+
+// Utilities
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const usernameRegex = /^[a-zA-Z0-9]{3,20}$/;
+
+function generateOTP() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+function normalizeEmail(email) {
+    return email.trim().toLowerCase();
+}
+
+function normalizeUsername(username) {
+    return username.trim();
+}
+
 // Email endpoint
 app.post('/api/contact', async (req, res) => {
     try {
         // Check if email credentials are configured
         if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
             console.error('❌ Email credentials not configured');
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Email service is not configured. Please contact the administrator.' 
+            return res.status(500).json({
+                success: false,
+                message: 'Email service is not configured. Please contact the administrator.'
             });
         }
 
@@ -66,20 +143,30 @@ app.post('/api/contact', async (req, res) => {
 
         // Validate required fields
         if (!name || !email || !subject || !message) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Please fill in all required fields.' 
+            return res.status(400).json({
+                success: false,
+                message: 'Please fill in all required fields.'
             });
         }
 
         // Email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Please enter a valid email address.' 
+            return res.status(400).json({
+                success: false,
+                message: 'Please enter a valid email address.'
             });
         }
+
+        const normalizedEmail = normalizeEmail(email);
+
+        // Persist contact submission
+        await Contact.create({
+            name: name.trim(),
+            email: normalizedEmail,
+            phone: phone ? phone.toString().trim() : '',
+            subject: subject.trim(),
+            message: message.toString()
+        });
 
         // 1. Send notification email to admin (yourself)
         const adminMailOptions = {
@@ -136,17 +223,17 @@ app.post('/api/contact', async (req, res) => {
         console.log('✅ Notification email sent to admin');
         console.log('✅ Auto-reply email sent to customer:', email);
 
-        res.json({ 
-            success: true, 
-            message: 'Thank you for contacting us! We will get back to you as soon as possible.' 
+        res.json({
+            success: true,
+            message: 'Thank you for contacting us! We will get back to you as soon as possible.'
         });
 
     } catch (error) {
         console.error('❌ Error sending email:', error);
-        
+
         // Provide more specific error messages
         let errorMessage = 'Sorry, there was an error sending your message. Please try again later.';
-        
+
         if (error.code === 'EAUTH') {
             errorMessage = 'Email authentication failed. Please check your Gmail credentials.';
         } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
@@ -154,67 +241,13 @@ app.post('/api/contact', async (req, res) => {
         } else if (error.response) {
             errorMessage = `Email server error: ${error.response}`;
         }
-        
-        res.status(500).json({ 
-            success: false, 
-            message: errorMessage 
+
+        res.status(500).json({
+            success: false,
+            message: errorMessage
         });
     }
 });
-
-// ===========================
-// AUTHENTICATION ENDPOINTS
-// ===========================
-
-const USERS_FILE = path.join(__dirname, 'data', 'users.json');
-const OTP_STORAGE = path.join(__dirname, 'data', 'otp.json');
-
-// Ensure data directory exists
-async function ensureDataDir() {
-    try {
-        await fs.mkdir(path.join(__dirname, 'data'), { recursive: true });
-    } catch (error) {
-        console.error('Error creating data directory:', error);
-    }
-}
-
-// Read users from file
-async function readUsers() {
-    try {
-        const data = await fs.readFile(USERS_FILE, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        return {};
-    }
-}
-
-// Write users to file
-async function writeUsers(users) {
-    await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2));
-}
-
-// Read OTP storage
-async function readOTPStorage() {
-    try {
-        const data = await fs.readFile(OTP_STORAGE, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        return {};
-    }
-}
-
-// Write OTP storage
-async function writeOTPStorage(otpData) {
-    await fs.writeFile(OTP_STORAGE, JSON.stringify(otpData, null, 2));
-}
-
-// Generate 6-digit OTP
-function generateOTP() {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-// Initialize data directory on startup
-ensureDataDir();
 
 // Order processing endpoint
 app.post('/api/orders', async (req, res) => {
@@ -233,7 +266,7 @@ app.post('/api/orders', async (req, res) => {
             address, 
             city, 
             postalCode, 
-            paymentMethod, 
+            paymentMethod,
             orderItems, 
             subtotal, 
             total 
@@ -302,6 +335,34 @@ app.post('/api/orders', async (req, res) => {
                 </td>
             </tr>
         `).join('');
+
+        const normalizedEmail = normalizeEmail(email);
+        const storedOrderItems = orderItems.map(item => {
+            const numericPrice = parseFloat(item.price.replace(/[^\d.]/g, '')) || 0;
+            const totalValue = numericPrice * item.quantity;
+            return {
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+                totalPrice: `${totalValue.toFixed(0)} AED`
+            };
+        });
+
+        // Persist order
+        await Order.create({
+            orderNumber,
+            fullName,
+            email: normalizedEmail,
+            phone,
+            address,
+            city,
+            postalCode,
+            paymentMethod,
+            paymentMethodDisplay,
+            subtotal,
+            total,
+            orderItems: storedOrderItems
+        });
 
         // 1. Send order notification to admin
         const adminMailOptions = {
@@ -514,9 +575,6 @@ app.post('/api/auth/signup', async (req, res) => {
         }
 
         const { email, username } = req.body;
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const usernameRegex = /^[a-zA-Z0-9]{3,20}$/;
-        
         if (!email || !emailRegex.test(email)) {
             return res.status(400).json({
                 success: false,
@@ -531,10 +589,12 @@ app.post('/api/auth/signup', async (req, res) => {
             });
         }
 
-        const users = await readUsers();
-        
+        const normalizedEmail = normalizeEmail(email);
+        const normalizedUsername = normalizeUsername(username);
+
         // Check if email already exists
-        if (users[email]) {
+        const existingUser = await User.findOne({ email: normalizedEmail });
+        if (existingUser) {
             return res.status(400).json({
                 success: false,
                 message: 'An account with this email already exists. Please login instead.'
@@ -542,8 +602,8 @@ app.post('/api/auth/signup', async (req, res) => {
         }
 
         // Check if username already exists
-        const existingUser = Object.values(users).find(user => user.username && user.username.toLowerCase() === username.toLowerCase());
-        if (existingUser) {
+        const existingUsername = await User.findOne({ usernameLower: normalizedUsername.toLowerCase() });
+        if (existingUsername) {
             return res.status(400).json({
                 success: false,
                 message: 'This username is already taken. Please choose another one.'
@@ -552,18 +612,22 @@ app.post('/api/auth/signup', async (req, res) => {
 
         // Generate OTP
         const otp = generateOTP();
-        const token = require('crypto').randomBytes(32).toString('hex');
+        const token = crypto.randomBytes(32).toString('hex');
         const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-        // Store OTP with username
-        const otpData = await readOTPStorage();
-        otpData[email] = {
-            otp: otp,
-            token: token,
-            expiresAt: expiresAt,
-            username: username
-        };
-        await writeOTPStorage(otpData);
+        await Otp.findOneAndUpdate(
+            { email: normalizedEmail },
+            {
+                email: normalizedEmail,
+                otp,
+                token,
+                expiresAt: new Date(expiresAt),
+                username: normalizedUsername,
+                usernameLower: normalizedUsername.toLowerCase(),
+                verified: false
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
 
         // Send OTP email
         const mailOptions = {
@@ -618,8 +682,8 @@ app.post('/api/auth/verify-otp', async (req, res) => {
             });
         }
 
-        const otpData = await readOTPStorage();
-        const storedData = otpData[email];
+        const normalizedEmail = normalizeEmail(email);
+        const storedData = await Otp.findOne({ email: normalizedEmail });
 
         if (!storedData) {
             return res.status(400).json({
@@ -635,9 +699,8 @@ app.post('/api/auth/verify-otp', async (req, res) => {
             });
         }
 
-        if (Date.now() > storedData.expiresAt) {
-            delete otpData[email];
-            await writeOTPStorage(otpData);
+        if (Date.now() > storedData.expiresAt.getTime()) {
+            await Otp.deleteOne({ email: normalizedEmail });
             return res.status(400).json({
                 success: false,
                 message: 'OTP has expired. Please request a new one.'
@@ -652,11 +715,11 @@ app.post('/api/auth/verify-otp', async (req, res) => {
         }
 
         // OTP verified - generate new token for password creation
-        const newToken = require('crypto').randomBytes(32).toString('hex');
+        const newToken = crypto.randomBytes(32).toString('hex');
         storedData.token = newToken;
         storedData.verified = true;
-        otpData[email] = storedData;
-        await writeOTPStorage(otpData);
+        storedData.expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+        await storedData.save();
 
         res.json({
             success: true,
@@ -684,19 +747,33 @@ app.post('/api/auth/resend-otp', async (req, res) => {
         }
 
         const { email } = req.body;
-        const otpData = await readOTPStorage();
-        
+        if (!email || !emailRegex.test(email)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please enter a valid email address.'
+            });
+        }
+
+        const normalizedEmail = normalizeEmail(email);
+
+        const existingOtp = await Otp.findOne({ email: normalizedEmail });
+        if (!existingOtp) {
+            return res.status(404).json({
+                success: false,
+                message: 'No OTP request found for this email. Please start signup again.'
+            });
+        }
+
         // Generate new OTP
         const otp = generateOTP();
-        const token = require('crypto').randomBytes(32).toString('hex');
+        const token = crypto.randomBytes(32).toString('hex');
         const expiresAt = Date.now() + 10 * 60 * 1000;
 
-        otpData[email] = {
-            otp: otp,
-            token: token,
-            expiresAt: expiresAt
-        };
-        await writeOTPStorage(otpData);
+        existingOtp.otp = otp;
+        existingOtp.token = token;
+        existingOtp.expiresAt = new Date(expiresAt);
+        existingOtp.verified = false;
+        await existingOtp.save();
 
         // Send OTP email
         const mailOptions = {
@@ -753,8 +830,8 @@ app.post('/api/auth/create-password', async (req, res) => {
             });
         }
 
-        const otpData = await readOTPStorage();
-        const storedData = otpData[email];
+        const normalizedEmail = normalizeEmail(email);
+        const storedData = await Otp.findOne({ email: normalizedEmail });
 
         if (!storedData || !storedData.verified || storedData.token !== token) {
             return res.status(400).json({
@@ -767,18 +844,14 @@ app.post('/api/auth/create-password', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create user
-        const users = await readUsers();
-        users[email] = {
-            email: email,
+        await User.create({
+            email: normalizedEmail,
             username: storedData.username,
-            password: hashedPassword,
-            createdAt: new Date().toISOString()
-        };
-        await writeUsers(users);
+            password: hashedPassword
+        });
 
         // Clean up OTP data
-        delete otpData[email];
-        await writeOTPStorage(otpData);
+        await Otp.deleteOne({ email: normalizedEmail });
 
         console.log(`✅ Account created for: ${email}`);
 
@@ -808,8 +881,8 @@ app.post('/api/auth/login', async (req, res) => {
             });
         }
 
-        const users = await readUsers();
-        const user = users[email];
+        const normalizedEmail = normalizeEmail(email);
+        const user = await User.findOne({ email: normalizedEmail });
 
         if (!user) {
             return res.status(400).json({
@@ -885,10 +958,25 @@ app.get('/api/auth/check', (req, res) => {
     }
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
-        console.log('⚠️  Email functionality will not work until GMAIL credentials are set in .env');
+// Start server after MongoDB connection
+async function startServer() {
+    try {
+        await mongoose.connect(MONGO_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        });
+        console.log('✅ Connected to MongoDB');
+
+        app.listen(PORT, () => {
+            console.log(`🚀 Server running on http://localhost:${PORT}`);
+            if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
+                console.log('⚠️  Email functionality will not work until GMAIL credentials are set in .env');
+            }
+        });
+    } catch (error) {
+        console.error('❌ MongoDB connection error:', error);
+        process.exit(1);
     }
-});
+}
+
+startServer();
