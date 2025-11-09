@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - HEIME</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="payment.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <a href="../index.html" class="logo">
+                    <img src="../../images/logo.png" alt="HEIME Logo" class="logo-img">
+                    <span>HEIME</span>
+                </a>
+                
+                <!-- Hamburger Menu Icon -->
+                <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                
+                <!-- Navigation Links -->
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="../index.html" class="nav-link">Home</a></li>
+                    <li><a href="../about/about.html" class="nav-link">About</a></li>
+                    <li><a href="../shop/shop.html" class="nav-link">Shop</a></li>
+                    <li><a href="../contact/contact.html" class="nav-link">Contact</a></li>
+                    <li><a href="../auth/signup.html" class="nav-link signup-btn">Sign Up</a></li>
+                    <li><a href="../auth/login.html" class="nav-link login-btn">Login</a></li>
+                    <li id="userMenu" style="display: none;"><a href="#" class="nav-link user-name"></a> | <a href="#" class="nav-link logout-btn">Logout</a></li>
+                    <li><a href="../cart/cart.html" class="nav-link cart-link">
+                        <svg class="cart-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="9" cy="21" r="1"></circle>
+                            <circle cx="20" cy="21" r="1"></circle>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </svg>
+                        <span class="cart-count-badge" id="cartCount">0</span>
+                    </a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Payment Section -->
+    <section class="payment-section">
+        <div class="container">
+            <h1 class="payment-title">Secure Checkout</h1>
+            
+            <div class="checkout-container">
+                <!-- Order Summary -->
+                <div class="order-summary">
+                    <h2>Order Summary</h2>
+                    <div id="orderItems" class="order-items">
+                        <!-- Items will be loaded from cart -->
+                    </div>
+                    <div class="order-totals">
+                        <div class="total-row">
+                            <span>Subtotal</span>
+                            <span id="subtotal">0 AED</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Shipping</span>
+                            <span>Free</span>
+                        </div>
+                        <div class="total-row total-final">
+                            <span>Total</span>
+                            <span id="totalAmount">0 AED</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Form -->
+                <div class="payment-form-container">
+                    <form id="paymentForm" class="payment-form">
+                        <!-- Delivery Information -->
+                        <div class="form-section">
+                            <h3>Delivery Information</h3>
+                            <div class="form-group">
+                                <label for="fullName">Full Name *</label>
+                                <input type="text" id="fullName" name="fullName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email *</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone Number *</label>
+                                <input type="tel" id="phone" name="phone" placeholder="+971 XX XXX XXXX" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="address">Delivery Address *</label>
+                                <textarea id="address" name="address" rows="3" required></textarea>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="city">City *</label>
+                                    <input type="text" id="city" name="city" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="postalCode">Postal Code</label>
+                                    <input type="text" id="postalCode" name="postalCode">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method Selection -->
+                        <div class="form-section">
+                            <h3>Select Payment Method</h3>
+                            <div class="payment-methods">
+                                <label class="payment-method-card">
+                                    <input type="radio" name="paymentMethod" value="card" checked>
+                                    <div class="payment-method-content">
+                                        <div class="payment-method-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+                                            </svg>
+                                        </div>
+                                        <span>Credit/Debit Card</span>
+                                        <div class="card-brands">
+                                            <span class="card-brand">Visa</span>
+                                            <span class="card-brand">Mastercard</span>
+                                            <span class="card-brand">Amex</span>
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label class="payment-method-card">
+                                    <input type="radio" name="paymentMethod" value="applepay">
+                                    <div class="payment-method-content">
+                                        <div class="payment-method-icon apple">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                                            </svg>
+                                        </div>
+                                        <span>Apple Pay</span>
+                                    </div>
+                                </label>
+
+                                <label class="payment-method-card">
+                                    <input type="radio" name="paymentMethod" value="googlepay">
+                                    <div class="payment-method-content">
+                                        <div class="payment-method-icon google">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                                            </svg>
+                                        </div>
+                                        <span>Google Pay</span>
+                                    </div>
+                                </label>
+
+                                <label class="payment-method-card">
+                                    <input type="radio" name="paymentMethod" value="paypal">
+                                    <div class="payment-method-content">
+                                        <div class="payment-method-icon paypal">
+                                            <span>PayPal</span>
+                                        </div>
+                                        <span>PayPal</span>
+                                    </div>
+                                </label>
+
+                                <label class="payment-method-card">
+                                    <input type="radio" name="paymentMethod" value="cod">
+                                    <div class="payment-method-content">
+                                        <div class="payment-method-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
+                                            </svg>
+                                        </div>
+                                        <span>Cash on Delivery</span>
+                                    </div>
+                                </label>
+
+                                <label class="payment-method-card">
+                                    <input type="radio" name="paymentMethod" value="tabby">
+                                    <div class="payment-method-content">
+                                        <div class="payment-method-icon tabby">
+                                            <span style="font-weight: bold; color: #000;">Tabby</span>
+                                        </div>
+                                        <span>Tabby (Buy Now, Pay Later)</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Card Details (shown when card is selected) -->
+                        <div id="cardDetails" class="form-section">
+                            <h3>Card Details</h3>
+                            <div class="form-group">
+                                <label for="cardNumber">Card Number *</label>
+                                <input type="text" id="cardNumber" name="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="expiryDate">Expiry Date *</label>
+                                    <input type="text" id="expiryDate" name="expiryDate" placeholder="MM/YY" maxlength="5" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cvv">CVV *</label>
+                                    <input type="text" id="cvv" name="cvv" placeholder="123" maxlength="4" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="cardName">Name on Card *</label>
+                                <input type="text" id="cardName" name="cardName" required>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="submit-payment-btn">
+                            <span>Complete Payment</span>
+                            <span id="totalBtn">0 AED</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <div class="success-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <h2>Payment Successful!</h2>
+            <p>Your order has been placed successfully. You will receive a confirmation email shortly.</p>
+            <button id="continueShopping" class="continue-btn">Continue Shopping</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>HEIME</h3>
+                    <p>Premium hoodies for the modern lifestyle</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="../index.html">Home</a></li>
+                        <li><a href="../about/about.html">About</a></li>
+                        <li><a href="../shop/shop.html">Shop</a></li>
+                        <li><a href="../contact/contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Customer Service</h4>
+                    <ul>
+                        <li><a href="#">Shipping Info</a></li>
+                        <li><a href="#">Returns</a></li>
+                        <li><a href="#">FAQ</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 HEIME. All rights reserved. | Designed with passion for quality</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../cart/cart.js"></script>
+    <script src="../script.js"></script>
+    <script src="../auth.js"></script>
+    <script src="payment.js"></script>
+</body>
+</html>
+
