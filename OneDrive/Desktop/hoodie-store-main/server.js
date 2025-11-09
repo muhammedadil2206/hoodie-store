@@ -11,6 +11,7 @@ const mongoose = require('mongoose');
 const Contact = require('./model/contact');
 
 const app = express();
+const isProduction = process.env.NODE_ENV === 'production';
 
 // Session configuration
 app.use(session({
@@ -18,11 +19,16 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false, // Set to true in production with HTTPS
+        secure: isProduction,
         httpOnly: true,
+        sameSite: isProduction ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
+
+if (isProduction) {
+    app.set('trust proxy', 1);
+}
 
 app.use(cors({
     origin: true,
@@ -197,7 +203,7 @@ app.post('/api/contact', async (req, res) => {
 
         // 2. Send automatic reply to customer (hide Gmail address)
         const customerMailOptions = {
-            from: `HEIME <heime@cloth.com>`,
+            from: `HEIME <${GMAIL_USER}>`,
             to: email, // Send to the person who contacted
             replyTo: 'heime@cloth.com', // Set reply-to to heime@cloth.com (not Gmail)
             headers: {
@@ -456,7 +462,7 @@ app.post('/api/orders', async (req, res) => {
 
         // 2. Send invoice to customer
         const customerMailOptions = {
-            from: `HEIME <heime@cloth.com>`,
+            from: `HEIME <${GMAIL_USER}>`,
             to: email,
             replyTo: 'heime@cloth.com',
             subject: `Payment Successful - Order Confirmation ${orderNumber}`,
@@ -641,7 +647,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
         // Send OTP email
         const mailOptions = {
-            from: `HEIME <heime@cloth.com>`,
+            from: `HEIME <${GMAIL_USER}>`,
             to: email,
             replyTo: 'heime@cloth.com',
             subject: 'Your HEIME Account Verification Code',
@@ -787,7 +793,7 @@ app.post('/api/auth/resend-otp', async (req, res) => {
 
         // Send OTP email
         const mailOptions = {
-            from: `HEIME <heime@cloth.com>`,
+            from: `HEIME <${GMAIL_USER}>`,
             to: email,
             replyTo: 'heime@cloth.com',
             subject: 'Your HEIME Account Verification Code',
@@ -971,10 +977,7 @@ app.get('/api/auth/check', (req, res) => {
 // Start server after MongoDB connection
 async function startServer() {
     try {
-        await mongoose.connect(MONGO_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true
-        });
+        await mongoose.connect(MONGO_URI);
         console.log('✅ Connected to MongoDB');
 
         app.listen(PORT, () => {
