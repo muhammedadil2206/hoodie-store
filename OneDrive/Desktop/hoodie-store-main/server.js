@@ -52,8 +52,9 @@ if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false,
+    requireTLS: true,
     auth: {
         user: GMAIL_USER,
         pass: GMAIL_APP_PASSWORD
@@ -61,6 +62,11 @@ const transporter = nodemailer.createTransport({
     connectionTimeout: 20000,
     socketTimeout: 20000
 });
+
+// Proactively verify transporter connectivity in the background
+transporter.verify()
+    .then(() => console.log('✅ SMTP transporter verified'))
+    .catch((err) => console.error('❌ SMTP verification failed:', err));
 
 // MongoDB Schemas & Models
 const userSchema = new mongoose.Schema({
