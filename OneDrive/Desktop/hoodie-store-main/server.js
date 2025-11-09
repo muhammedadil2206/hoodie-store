@@ -47,23 +47,22 @@ app.get('/', (req, res) => {
 });
 
 const GMAIL_USER = process.env.GMAIL_USER;
-const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb+srv://aithorappan_db_user:<db_password>@cluster0.rl7qkny.mongodb.net/?appName=Cluster0';
 
 // Check if email credentials are set
-if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
-    console.error('⚠️  WARNING: GMAIL_USER and GMAIL_APP_PASSWORD must be set in .env file');
+if (!GMAIL_USER || !RESEND_API_KEY) {
+    console.error('⚠️  WARNING: Email sender and RESEND_API_KEY must be set in environment variables');
 }
 
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    requireTLS: true,
+    host: 'smtp.resend.com',
+    port: 465,
+    secure: true,
     auth: {
-        user: GMAIL_USER,
-        pass: GMAIL_APP_PASSWORD
+        user: 'resend',
+        pass: RESEND_API_KEY
     },
     connectionTimeout: 20000,
     socketTimeout: 20000
@@ -147,8 +146,8 @@ function normalizeUsername(username) {
 app.post('/api/contact', async (req, res) => {
     try {
         // Check if email credentials are configured
-        if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
-            console.error('❌ Email credentials not configured');
+        if (!GMAIL_USER || !RESEND_API_KEY) {
+            console.error('❌ Email service credentials not configured');
             return res.status(500).json({
                 success: false,
                 message: 'Email service is not configured. Please contact the administrator.'
@@ -251,7 +250,7 @@ app.post('/api/contact', async (req, res) => {
         let errorMessage = 'Sorry, there was an error sending your message. Please try again later.';
 
         if (error.code === 'EAUTH') {
-            errorMessage = 'Email authentication failed. Please check your Gmail credentials.';
+            errorMessage = 'Email authentication failed. Please check your email service credentials.';
         } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
             errorMessage = 'Could not connect to email server. Please check your internet connection.';
         } else if (error.response) {
@@ -268,7 +267,7 @@ app.post('/api/contact', async (req, res) => {
 // Order processing endpoint
 app.post('/api/orders', async (req, res) => {
     try {
-        if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
+        if (!GMAIL_USER || !RESEND_API_KEY) {
             return res.status(500).json({
                 success: false,
                 message: 'Email service is not configured.'
@@ -583,7 +582,7 @@ app.post('/api/orders', async (req, res) => {
 // Signup - Send OTP
 app.post('/api/auth/signup', async (req, res) => {
     try {
-        if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
+        if (!GMAIL_USER || !RESEND_API_KEY) {
             return res.status(500).json({
                 success: false,
                 message: 'Email service is not configured.'
@@ -755,7 +754,7 @@ app.post('/api/auth/verify-otp', async (req, res) => {
 // Resend OTP
 app.post('/api/auth/resend-otp', async (req, res) => {
     try {
-        if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
+        if (!GMAIL_USER || !RESEND_API_KEY) {
             return res.status(500).json({
                 success: false,
                 message: 'Email service is not configured.'
@@ -982,8 +981,8 @@ async function startServer() {
 
         app.listen(PORT, () => {
             console.log(`🚀 Server running on http://localhost:${PORT}`);
-            if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
-                console.log('⚠️  Email functionality will not work until GMAIL credentials are set in .env');
+            if (!GMAIL_USER || !RESEND_API_KEY) {
+                console.log('⚠️  Email functionality will not work until email credentials are set in environment variables');
             }
         });
     } catch (error) {
